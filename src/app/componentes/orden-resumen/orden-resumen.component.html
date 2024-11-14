@@ -1,0 +1,26 @@
+<div class="m-4 p-4 border-4 border-black rounded bg-gray-100 shadow-lg">
+    <table class="w-full border-collapse border border-gray-300 rounded-lg overflow-hidden">
+        <thead class="bg-gray-200">
+            <tr>
+                <th class="border border-gray-300 px-4 py-2">Tamaño</th>
+                <th class="border border-gray-300 px-4 py-2">Ingredientes</th>
+                <th class="border border-gray-300 px-4 py-2">Num. Pizzas</th>
+                <th class="border border-gray-300 px-4 py-2">SubTotal</th>
+            </tr>
+        </thead>
+        <tbody *ngIf="ordenServicio.ordenes">
+            <tr *ngFor="let orden of ordenServicio.ordenes; let i = index" class="hover:bg-gray-300 transition duration-200">
+                <td class="border border-gray-300 px-4 py-2">{{ orden.tamanio }}</td>
+                <td class="border border-gray-300 px-4 py-2">{{ orden.ingredientes }}</td>
+                <td class="border border-gray-300 px-4 py-2">{{ orden.cantidad }}</td>
+                <td class="border border-gray-300 px-4 py-2">${{ orden.subtotal }}</td>
+                <td class="border border-gray-300 px-4 py-2">
+                    <button class="text-red-500 hover:text-red-700 transition duration-200" (click)="ordenServicio.quitarOrden(i)">Quitar</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <div class="flex mt-4">
+        <button class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-700 transition duration-200" (click)="guardaPedido()">Terminar Pedido</button>
+    </div>
+</div>
