@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { PedidoService } from '../pedido-service.service';
+import { Pedido, PedidoService } from '../pedido-service.service';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -12,7 +12,7 @@ import { ReactiveFormsModule } from '@angular/forms';
   styles: ``,
 })
 export default class VentasDiaComponent {
-  pedidosDia: any[] = [];
+  pedidosDia: Pedido[] = [];
   ventasTotalesDia: number = 0;
   diaSeleccionado: string = '';
 
@@ -20,13 +20,20 @@ export default class VentasDiaComponent {
 
   mostrarVentasPorDia(): void {
     if (this.diaSeleccionado) {
+      this.pedidoService
+        .obtenerVentasTotalesPorDiaSemana(this.diaSeleccionado)
+        .subscribe(
+          (data) => (this.pedidosDia = data),
+          (error) => console.log(error),
+          () => console.log('Subscription finished')
+        );
 
-      this.pedidosDia = this.pedidoService.obtenerVentasTotalesPorDiaSemana(this.diaSeleccionado);
-
-
-      this.ventasTotalesDia = this.pedidosDia.reduce((total, pedido) => total + (pedido.total || 0), 0);
+      this.ventasTotalesDia = this.pedidosDia.reduce(
+        (total, pedido) => total + (pedido.total || 0),
+        0
+      );
     } else {
-      alert("Por favor, selecciona un día.");
+      alert('Por favor, selecciona un día.');
     }
   }
 }

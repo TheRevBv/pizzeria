@@ -1,14 +1,16 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
 
-interface Pizza {
+export interface Pizza {
   tamano: string;
   ingredientes2: string[];
   cantidad: number;
   subtotal: number;
 }
 
-interface Pedido {
+export interface Pedido {
+  id?: string;
   nombreCliente: string;
   direccion: string;
   telefono: string;
@@ -18,38 +20,49 @@ interface Pedido {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class PedidoService {
-  private pedidos: Pedido[] = [];
+  // private pedidosSubject = new BehaviorSubject<Pedido[]>([]);
+  // pedidos$ = this.pedidosSubject.asObservable();
+
   private pizzas: Pizza[] = [];
-  
+
+  private pizzasSubject = new BehaviorSubject<Pizza[]>([]);
+  pizzas$ = this.pizzasSubject.asObservable();
+
+  private apiUrl = 'http://localhost:3000/pedidos';
+
   private clienteInfo = {
     nombreCliente: '',
     direccion: '',
     telefono: '',
-    fechaCompra: ''
+    fechaCompra: '',
   };
-  
 
-  private pedidosSubject = new BehaviorSubject<Pedido[]>([]);  
-  pedidos$ = this.pedidosSubject.asObservable();  
-  
-  private pizzasSubject = new BehaviorSubject<Pizza[]>([]);
-  pizzas$ = this.pizzasSubject.asObservable();
-
-  constructor() {
-    this.inicializarPedidos();
+  constructor(private http: HttpClient) {
+    // this.cargarPedidos();
   }
 
-  private inicializarPedidos() {
-    const pedidosGuardados = localStorage.getItem('pedidos');
-    this.pedidos = pedidosGuardados ? JSON.parse(pedidosGuardados) : [];
-    this.pedidosSubject.next(this.pedidos);  
-  }
+  // private cargarPedidos() {
+  //   this.http.get<Pedido[]>(this.apiUrl).subscribe(
+  //     (pedidos) => this.pedidosSubject.next(pedidos),
+  //     (error) => console.error(error)
+  //   );
+  // }
 
-  setDatosCliente(nombre: string, direccion: string, telefono: string, fecha: string) {
-    this.clienteInfo = { nombreCliente: nombre, direccion: direccion, telefono: telefono, fechaCompra: fecha };
+  setDatosCliente(
+    nombre: string,
+    direccion: string,
+    telefono: string,
+    fecha: string
+  ) {
+    this.clienteInfo = {
+      nombreCliente: nombre,
+      direccion: direccion,
+      telefono: telefono,
+      fechaCompra: fecha,
+    };
   }
 
   getDatosCliente() {
@@ -66,43 +79,38 @@ export class PedidoService {
   }
 
   eliminarPizza(pizza: Pizza) {
-    this.pizzas = this.pizzas.filter(p => p !== pizza);
+    this.pizzas = this.pizzas.filter((p) => p !== pizza);
     this.pizzasSubject.next(this.pizzas);
   }
+
+  //Pedidos
 
   finalizarPedido() {
     const total = this.pizzas.reduce((acc, pizza) => acc + pizza.subtotal, 0);
     const pedido: Pedido = {
       ...this.clienteInfo,
       pizzas: this.pizzas,
-      total: total
+      total: total,
     };
-    this.pedidos.push(pedido);
-    this.guardarPedidos(); 
-    this.pedidosSubject.next(this.pedidos);  
-    this.pizzas = [];  
-    this.pizzasSubject.next(this.pizzas);  
+    this.agregarPedido(pedido);
+    // this.pedidos.push(pedido);
+    // this.guardarPedidos();
+    // this.pedidosSubject.next(this.pedidos);
+    this.pizzas = [];
+    this.pizzasSubject.next(this.pizzas);
   }
 
-  obtenerVentasTotalesPorDiaSemana(dia: string): Pedido[] {
-    const diasDeLaSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-  
-    
-    const indiceDia = diasDeLaSemana.indexOf(dia);
-    
-    if (indiceDia === -1) {
-      return []; 
-    }
-  
-    return this.pedidos.filter(pedido => {
-      const fechaPedido = new Date(pedido.fechaCompra);
- 
-      return fechaPedido.getDay() === indiceDia;
-    });
+  agregarPedido(pedido: Pedido) {
+    return this.http.post<Pedido>(this.apiUrl, pedido);
   }
-  
-  
-  private guardarPedidos() {
-    localStorage.setItem('pedidos', JSON.stringify(this.pedidos));
+
+  eliminarPedido(id: string) {
+    const url = `${this.apiUrl}/${id}`;
+    this.http.delete(url);
+  }
+
+  obtenerVentasTotalesPorDiaSemana(dia: string): Observable<Pedido[]> {
+    const url = `${this.apiUrl}/ventas/dia?dia=${dia}`;
+    return this.http.get<Pedido[]>(url);
   }
 }
