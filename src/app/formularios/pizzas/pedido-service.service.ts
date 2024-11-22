@@ -1,5 +1,5 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { computed, Injectable, signal } from '@angular/core';
+import { BehaviorSubject, delay, map, Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 
 export interface Pizza {
@@ -18,6 +18,10 @@ export interface Pedido {
   pizzas: Pizza[];
   total: number;
 }
+interface State {
+  pedidos: Pedido[];
+  loading: boolean;
+}
 
 @Injectable({
   providedIn: 'root',
@@ -25,6 +29,13 @@ export interface Pedido {
 export class PedidoService {
   // private pedidosSubject = new BehaviorSubject<Pedido[]>([]);
   // pedidos$ = this.pedidosSubject.asObservable();
+
+  #state = signal<State>({
+    loading: true,
+    pedidos: [],
+  });
+
+  public pedidos = computed(() => this.#state().pedidos);
 
   private pizzas: Pizza[] = [];
 
@@ -109,8 +120,13 @@ export class PedidoService {
     this.http.delete(url);
   }
 
-  obtenerVentasTotalesPorDiaSemana(dia: string): Observable<Pedido[]> {
+  obtenerVentasTotalesPorDiaSemana(dia: string) {
     const url = `${this.apiUrl}/ventas/dia?dia=${dia}`;
-    return this.http.get<Pedido[]>(url);
+    this.http.get<Pedido[]>(url).subscribe((res) => {
+      this.#state.set({
+        loading: false,
+        pedidos: res,
+      });
+    });
   }
 }
